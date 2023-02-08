@@ -146,25 +146,7 @@ class Manuevering(object):
         time.sleep(1)
         self.Chad.stop()
 
-class Sensing(object):
-    
-    def __init__(self, pin0, pin1, pin2):
-        self.chn_0 = ADC(pin0)
-        self.chn_1 = ADC(pin1)
-        self.chn_2 = ADC(pin2)
-
-        self.left_channel = []
-        self.center_channel = []
-        self.right_channel = []
-
-
-    def read_pins(self):
-        self.left_channel.append(self.chn_0.read())
-        self.center_channel.append(self.chn_1.read())
-        self.right_channel.append(self.chn_2.read())
-
-
-class Interpretation(Sensing):
+class GreyScale_Sensing():
     def __init__(self, dark_limit = 600, light_limit = 1400, polarity = 'darker_line', sensitivity = 0.6):
         self.dark_limit = dark_limit
         self.light_limit = light_limit
@@ -177,7 +159,6 @@ class Interpretation(Sensing):
         self.means = []
 
     #def get_line_status(self, sensor_data):
-
 
         
 def week_2():
