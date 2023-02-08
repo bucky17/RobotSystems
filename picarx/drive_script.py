@@ -192,13 +192,6 @@ class GreyScale_Moving(object):
     def follow_line(self, steer_angle):
         follow = self.k_control * steer_angle
         return follow
-
-
-
-
-
-
-
         
 def week_2():
     man = Manuevering()
@@ -256,6 +249,17 @@ def week_2():
 
     time.sleep(2)
     print("I was just joshin' thanks for learning to drive")
+
+def week_3():
+    chad = Picarx()
+    man = Manuevering()
+    interpretation = GreyScale_Sensing()
+    move = GreyScale_Moving()
+
+    end_loop = False
+
+    while end_loop == False:
+        
 
 
 
