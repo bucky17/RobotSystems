@@ -146,19 +146,58 @@ class Manuevering(object):
         time.sleep(1)
         self.Chad.stop()
 
-class GreyScale_Sensing():
-    def __init__(self, dark_limit = 600, light_limit = 1400, polarity = 'darker_line', sensitivity = 0.6):
-        self.dark_limit = dark_limit
-        self.light_limit = light_limit
-        self.polarity = polarity
+class GreyScale_Sensing(object):
+    def __init__(self):
+        self.window_size  = 10
 
-        self.sensitivity = sensitivity
+        self.left_channel = []
+        self.center_channel = []
+        self.right_channel = []
 
-        self.window = 10
+    def get_line_status(self, sensor_data):
+        #fills channel lists
+        self.left_channel.append(int(sensor_data[0]))
+        self.center_channel.append(int(sensor_data[1]))
+        self.right_channel.append(int(sensor_data[2]))
 
-        self.means = []
+        #Only look at a window of ten data points per channel. Move by one as data filters by deleting index 0
+        if len(self.left_channel) > self.window_size
+            self.left_channel.pop(0)
+            self.center_channel.pop(0)
+            self.right_channel.pop(0)
+        
+        # averages of the windows of 10
+        avg1 = int(st.mean(self.left_channel))
+        avg2 = int(st.mean(self.center_channel))
+        avg3 = int(st.mean(self.right_channel))
 
-    #def get_line_status(self, sensor_data):
+        avgs = [avg1, avg2, avg3]
+
+        #use min and max values of the means instead of channles to limit error due to different light conditions
+        minimum = min(avgs)
+        maximum = max(avgs)
+        rang = maximum - minimum
+
+        avg_a1 = (avg1 - minimum) / rang
+        avg_a2 = (avg2 - minimum) / rang
+        avg_a3 = (avg3 - minimum) / rang
+
+        steer_angle = (avg_a3 - avg_a1) / (avg_a1 + avg_a2 + avg_a3)
+        
+        return avgs, steer_angle
+
+class GreyScale_Moving(object):
+    def __init__(self, k_control = 20):
+        self.k_control = k_control
+    def follow_line(self, steer_angle):
+        follow = self.k_control * steer_angle
+        return follow
+
+
+
+
+
+
 
         
 def week_2():
