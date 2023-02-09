@@ -184,7 +184,7 @@ class GreyScale_Sensing(object):
 
         steer_angle = (avg_a3 - avg_a1) / (avg_a1 + avg_a2 + avg_a3)
         
-        return avgs, steer_angle
+        return steer_angle
 
 class GreyScale_Moving(object):
     def __init__(self, k_control = 20):
@@ -256,9 +256,29 @@ def week_3():
     interpretation = GreyScale_Sensing()
     move = GreyScale_Moving()
 
-    end_loop = False
+    clock = 0
+    start_clock = time.time()
 
-    while end_loop == False:
+
+
+    while clock < 10:
+        greyscale_data = chad.get_grayscale_data()
+
+        steer_angle = interpretation.get_line_status(greyscale_data)
+        follow = move.follow_line(steer_angle)
+
+        chad.set_dir_servo_angle(follow)
+        chad.forward(1)
+
+        clock = time.time() - start_clock
+
+
+
+        
+
+
+
+
         
 
 
