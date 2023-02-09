@@ -261,7 +261,7 @@ def week_3():
 
 
 
-    while clock < 10:
+    while clock < 3:
         greyscale_data = chad.get_grayscale_data()
 
         steer_angle = interpretation.get_line_status(greyscale_data)
