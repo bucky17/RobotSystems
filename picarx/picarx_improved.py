@@ -11,8 +11,8 @@ import atexit
 
 try:
     from robot_hat import *
-    from robot_hat import __reset_mcu__
-    __reset_mcu__()
+    from robot_hat import reset_mcu
+    reset_mcu()
     time.sleep(0.01)
 except ImportError:
     print("This computer does not appear to be a PiCar-X system (robot_hat is not present). Shadowing hardware calls with substitute functions")
@@ -41,8 +41,8 @@ class Picarx(object):
     # ultrasonic_pins: tring, echo
     # config: path of config file
     def __init__(self, 
-                servo_pins:list=['P0', 'P1', 'P2'], 
-                motor_pins:list=['D4', 'D5', 'P12', 'P13'],
+                servo_pins: list=['P0', 'P1', 'P2'], 
+                motor_pins: list=['D4', 'D5', 'P12', 'P13'],
                 grayscale_pins:list=['A0', 'A1', 'A2'],
                 ultrasonic_pins:list=['D2','D3'],
                 config:str=config_file,

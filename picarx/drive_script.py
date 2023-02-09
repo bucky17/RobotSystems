@@ -1,14 +1,14 @@
 "Debug Script for Picar-X"
 
 from picarx_improved import Picarx
-try:
-    from robot_hat import *
-    from robot_hat import reset_mcu
-    reset_mcu()
-    time.sleep(0.01)
-except ImportError:
-    print("This computer does not appear to be a PiCar-X system (robot_hat is not present). Shadowing hardware calls with substitute functions")
-    from sim_robot_hat import *
+# try:
+#     from robot_hat import *
+#     from robot_hat import reset_mcu
+#     reset_mcu()
+#     time.sleep(0.01)
+# except ImportError:
+#     print("This computer does not appear to be a PiCar-X system (robot_hat is not present). Shadowing hardware calls with substitute functions")
+#     from sim_robot_hat import *
 
 import time
 import statistics as st
@@ -161,7 +161,7 @@ class GreyScale_Sensing(object):
         self.right_channel.append(int(sensor_data[2]))
 
         #Only look at a window of ten data points per channel. Move by one as data filters by deleting index 0
-        if len(self.left_channel) > self.window_size
+        if len(self.left_channel) > self.window_size:
             self.left_channel.pop(0)
             self.center_channel.pop(0)
             self.right_channel.pop(0)
