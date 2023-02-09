@@ -272,8 +272,9 @@ def week_3():
 
         clock = time.time() - start_clock
 
-
-
+if __name__ == "__main__":
+    chad = Picarx()
+    week_3()
         
 
 
