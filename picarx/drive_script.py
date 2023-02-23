@@ -208,12 +208,12 @@ class Camera_Module():
         hsv = cv2.cvtColor(resize_img, cv2.COLOR_BGR2HSV)              # Convert from BGR to HSV
         color_type = color_name
     
-        mask = cv2.inRange(hsv,np.array([min(color_dict[color_type]), 60, 60]), np.array([max(color_dict[color_type]), 255, 255]) )           # inRange()：Make the ones between lower/upper white, and the rest black
+        mask = cv2.inRange(hsv,np.array([min(self.color_dict[color_type]), 60, 60]), np.array([max(self.color_dict[color_type]), 255, 255]) )           # inRange()：Make the ones between lower/upper white, and the rest black
         if color_type == 'red':
-            mask_2 = cv2.inRange(hsv, (color_dict['red_2'][0],0,0), (color_dict['red_2'][1],255,255)) 
+            mask_2 = cv2.inRange(hsv, (self.color_dict['red_2'][0],0,0), (self.color_dict['red_2'][1],255,255)) 
             mask = cv2.bitwise_or(mask, mask_2)
 
-        morphologyEx_img = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel_5,iterations=1)              # Perform an open operation on the image 
+        morphologyEx_img = cv2.morphologyEx(mask, cv2.MORPH_OPEN, self.kernel_5,iterations=1)              # Perform an open operation on the image 
 
         # Find the contour in morphologyEx_img, and the contours are arranged according to the area from small to large.
         _tuple = cv2.findContours(morphologyEx_img,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)      
@@ -342,7 +342,7 @@ def week_3b():
 
         for frame in camera.capture_continuous(rawCapture, format="bgr",use_video_port=True):# use_video_port=True
             img = frame.array
-            img,img_2,img_3 =  color_detect(img,'red')  # Color detection function
+            img,img_2,img_3 =  cam.color_detect(img,'blue')  # Color detection function
             cv2.imshow("video", img)    # OpenCV image show
             cv2.imshow("mask", img_2)    # OpenCV image show
             cv2.imshow("morphologyEx_img", img_3)    # OpenCV image show
