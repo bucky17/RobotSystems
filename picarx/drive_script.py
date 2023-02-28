@@ -454,7 +454,7 @@ def week4():
 
 if __name__ == "__main__":
     chad = Picarx()
-    week_3b()
+    week4()
         
 
 
