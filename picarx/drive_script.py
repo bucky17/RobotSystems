@@ -1,5 +1,6 @@
 "Debug Script for Picar-X"
 from picarx_improved import Picarx
+from picarx_improved import Grayscale_Module
 # try:
 #     from robot_hat import *
 #     from robot_hat import reset_mcu
@@ -15,6 +16,8 @@ import time
 import statistics as st
 import logging
 import numpy as np
+import concurrent.futures
+from readerwriterlock import rwlock
 
 
 class Manuevering(object):
@@ -148,6 +151,27 @@ class Manuevering(object):
         self.Chad.stop()
 
 class GreyScale_Sensing(object):
+    def __init__(self, input_pins = ['A0', 'A1', 'A2']):
+        pin1, pin2, pin3 = input_pins
+        self.grayscale_sensor = Grayscale_Module(pin1, pin2, pin3, ref = 1000)
+    
+    def list_grayscale_data(self):
+        #placeholder
+        self.grayscale_data = self.grayscale_sensor.get_grayscale_data()
+        return self.grayscale_data
+    
+    def producer(self, sensor_bus, timing):
+        while True:
+            #information being sent
+            message = self.grayscale_data
+            #sending the information
+            sensor_bus.write(message)
+            #take a break
+            time.sleep(timing)
+
+        
+
+class GreyScale_Interpret(object):
     def __init__(self):
         self.window_size  = 10
 
@@ -186,13 +210,36 @@ class GreyScale_Sensing(object):
         steer_angle = (avg_a3 - avg_a1) / (avg_a1 + avg_a2 + avg_a3)
         
         return steer_angle
+    
+    def consumer_producer(self, sensor_bus, interpretor_bus, timing):
+        while True:
+            #what is being read from the producer
+            message = sensor_bus.read()
+            #take message and interpret data
+            steer_angle = self.get_line_status(message)
+            #write the interpreted data to the bus
+            interpretor_bus.write(steer_angle)
+            #take a break
+            time.sleep(timing)
 
-class GreyScale_Moving(object):
-    def __init__(self, k_control = 20):
+class Controller(object):
+    def __init__(self, k_control = 25):
         self.k_control = k_control
+        self.chad = Picarx()
     def follow_line(self, steer_angle):
         follow = self.k_control * steer_angle
         return follow
+    def consumer(self, interpretor_bus, timing):
+        while True:
+            #read the message sent from previous bus
+            message = interpretor_bus.read()
+            #actuate
+            follow = self.follow_line(message)
+            self.chad.set_dir_servo_angle(follow)
+            #take a break
+            time.sleep(timing)
+
+
     
 class Camera_Module():
     def __init__(self):
@@ -244,6 +291,22 @@ class Camera_Module():
     
     def frame_of_interest(self, central_line):
         return (central_line - self.center_screen)/self.center_screen
+    
+class CarBus():
+    def __init__(self):
+        self.message = 0
+        self.lock = rwlock.RWLockWriteD()
+    
+    def write(self, message):
+        with self.lock.gen_wlock():
+            self.message = message
+
+    def read(self):
+        with self.lock.gen_rlock():
+            message = self.message
+            
+
+
          
     
 
@@ -328,7 +391,7 @@ def week_3a():
 
 def week_3b():
     chad = Picarx()
-    move = GreyScale_Moving()
+    move = Controller()
     cam = Camera_Module()
 
     with PiCamera() as camera:
@@ -361,7 +424,31 @@ def week_3b():
         cv2.destroyAllWindows()
         camera.close()
 
+def week4():
+    #Defining the modules used
+    sensor = GreyScale_Sensing()
+    interpreter = GreyScale_Interpret()
+    controller = Controller()
 
+    #Defining the buses
+    sensor_bus = CarBus()
+    interpreter_bus = CarBus()
+
+    #timing
+    producer_delay = 0.01
+    cons_prod_delay = 0.01
+    consumer_delay = 0.01
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers =2) as executor:
+        eSensor = executor.submit(sensor.producer , sensor_bus , producer_delay)
+        eInterpreter = executor.submit(interpreter.consumer_producer , sensor_bus , interpreter_bus , cons_prod_delay)
+        eController = executor.submit(controller.consumer, interpreter_bus, consumer_delay)
+
+    eSensor.result()
+    eInterpreter.result()
+    eController.result()
+
+    
 
             
 
