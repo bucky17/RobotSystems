@@ -153,17 +153,16 @@ class Manuevering(object):
 class GreyScale_Sensing(object):
     def __init__(self, input_pins = ['A0', 'A1', 'A2']):
         pin1, pin2, pin3 = input_pins
-        self.grayscale_sensor = Grayscale_Module(pin1, pin2, pin3, ref = 1000)
+        self.grayscale_sensor = Grayscale_Module(pin1, pin2, pin3, reference = 1000)
     
     def list_grayscale_data(self):
-        #placeholder
-        self.grayscale_data = self.grayscale_sensor.get_grayscale_data()
-        return self.grayscale_data
+        grayscale_data = list.copy(self.grayscale_sensor.get_grayscale_data())
+        return grayscale_data
     
     def producer(self, sensor_bus, timing):
         while True:
             #information being sent
-            message = self.grayscale_data
+            message = self.list_grayscale_data()
             #sending the information
             sensor_bus.write(message)
             #take a break
