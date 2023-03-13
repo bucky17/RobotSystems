@@ -18,6 +18,7 @@ import logging
 import numpy as np
 import concurrent.futures
 from readerwriterlock import rwlock
+import rossros as rr
 
 
 class Manuevering(object):
@@ -159,14 +160,14 @@ class GreyScale_Sensing(object):
         grayscale_data = list.copy(self.grayscale_sensor.get_grayscale_data())
         return grayscale_data
     
-    def producer(self, sensor_bus, timing):
-        while True:
+    #def producer(self, sensor_bus, timing):
+        #while True:
             #information being sent
-            message = self.list_grayscale_data()
+            #message = self.list_grayscale_data()
             #sending the information
-            sensor_bus.write(message)
+            #sensor_bus.write(message)
             #take a break
-            time.sleep(timing)
+            #time.sleep(timing)
 
         
 
@@ -210,34 +211,43 @@ class GreyScale_Interpret(object):
         
         return steer_angle
     
-    def consumer_producer(self, sensor_bus, interpretor_bus, timing):
-        while True:
+    #def consumer_producer(self, sensor_bus, interpretor_bus, timing):
+        #while True:
             #what is being read from the producer
-            message = sensor_bus.read()
+            #message = sensor_bus.read()
             #take message and interpret data
-            steer_angle = self.get_line_status(message)
+            #steer_angle = self.get_line_status(message)
             #write the interpreted data to the bus
-            interpretor_bus.write(steer_angle)
+            #interpretor_bus.write(steer_angle)
             #take a break
-            time.sleep(timing)
+            #time.sleep(timing)
 
-class Controller(object):
+class Grayscale_Controller(object):
     def __init__(self, k_control = 25):
         self.k_control = k_control
         self.chad = Picarx()
     def follow_line(self, steer_angle):
         follow = self.k_control * steer_angle
         return follow
-    def consumer(self, interpretor_bus, timing):
-        while True:
+    #def consumer(self, interpretor_bus, timing):
+        #while True:
             #read the message sent from previous bus
-            message = interpretor_bus.read()
+            #message = interpretor_bus.read()
             #actuate
-            follow = self.follow_line(message)
-            self.chad.set_dir_servo_angle(follow)
+            #follow = self.follow_line(message)
+            #self.chad.set_dir_servo_angle(follow)
             #take a break
-            time.sleep(timing)
+            #time.sleep(timing)
 
+class DistanceController():
+    def __init__(self, picar_object):
+        self.picar_object = picar_object
+
+    def stop_dist(self, distance):
+        if distance > 10:
+            self.picar_object.forward(10)
+        elif distance < 10:
+            self.picar_object.stop()
 
     
 class Camera_Module():
@@ -390,7 +400,7 @@ def week_3a():
 
 def week_3b():
     chad = Picarx()
-    move = Controller()
+    move = Grayscale_Controller()
     cam = Camera_Module()
 
     with PiCamera() as camera:
@@ -427,7 +437,7 @@ def week4():
     #Defining the modules used
     sensor = GreyScale_Sensing()
     interpreter = GreyScale_Interpret()
-    controller = Controller()
+    controller = Grayscale_Controller()
 
     #Defining the buses
     sensor_bus = CarBus()
@@ -447,13 +457,86 @@ def week4():
     eInterpreter.result()
     eController.result()
 
+
+def week_5(Picarx):
+
+    # Instances of sensor, interpreter and controller
+    sensor = GreyScale_Sensing()
+    interpreter = GreyScale_Interpret()
+    controller = Grayscale_Controller(px, 20)
+    dController = DistanceController(px)
+    ultrasonic = Ultrasonic(Pin('D2'), Pin('D3'))
+
+    
+    bGraySensor = rr.Bus(sensor.adc_list(), "Grayscale Sensor Bus")
+    bGrayInterpreter = rr.Bus(interpreter.sharp_edge(bGraySensor.message), "Grayscale Interpreter bus")
+    bUltrasonic = rr.Bus(ultrasonic.read(10), "Ultrasonic Interpreter bus")
+    bTerminate = rr.Bus(0, "Termination Bus")
+
+    
+    graySensor = rr.Producer(
+        sensor.adc_list,                # function that will generate data
+        bGraySensor,                    # output data bus
+        0.001,                           # delay between data generation
+        bTerminate,                     # bus to watch for termination signal
+        "Read GrayScale sensor signal")
+
+    grayInterpreter = rr.ConsumerProducer(
+        interpreter.sharp_edge,     # function that processes data
+        bGraySensor,                    # input data bus
+        bGrayInterpreter,               # output data bus
+        0.001,                           # delay
+        bTerminate,                     # bus to watch for termination signal
+        "Interpret Grayscale into line position")
+
+    ultrasonicSensor = rr.Producer(
+        ultrasonic.read,
+        bUltrasonic,
+        0.001,
+        bTerminate,
+        "Read and Interpret Ultrasound distance")
+
+    dirController = rr.Consumer(
+        controller.steer_towards_line,
+        bGrayInterpreter,
+        0.001,
+        bTerminate,
+        "Control steering angle")
+
+    distController = rr.Consumer(
+        dController.move_stop,
+        bUltrasonic,
+        0.001,
+        bTerminate,
+        "Watching the distance ahead")
+
+
+    terminationTimer = rr.Timer(
+        bTerminate,         # Output data bus
+        20,                  # Duration
+        0.01,               # Delay between checking termination time
+        bTerminate,         # Bus to check for termination signal
+        "Termination Timer")
+
+    # Create list of producer-consumers to execute concurrently
+    producer_consumer_list = [graySensor,
+                              grayInterpreter,
+                              dirController,
+                              ultrasonicSensor,
+                              distController,
+                              terminationTimer]
+
+    # Execute the list of producer-consumers concurrently
+    rr.runConcurrently(producer_consumer_list)
+
+
     
 
             
 
 if __name__ == "__main__":
     chad = Picarx()
-    week4()
+    week_5()
         
 
 
